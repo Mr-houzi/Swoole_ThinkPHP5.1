@@ -47,6 +47,7 @@ class HttpServer{
 
     public function onRequest($request, $response){
         // 将swoole中$request 与 PHP原生$_SERVER适配
+        $_SERVER = [];
         if (isset($request->server)){
             foreach ($request->server as $k => $v){
                 $_SERVER[strtoupper($k)] = $v;
@@ -57,14 +58,22 @@ class HttpServer{
                 $_SERVER[strtoupper($k)] = $v;
             }
         }
+        $_GET = []; //每次回调清空一下上次$_GET
         if (isset($request->get)){
             foreach ($request->get as $k => $v){
                 $_GET[$k] = $v;
             }
         }
+        $_POST = [];
         if (isset($request->post)){
             foreach ($request->post as $k => $v){
                 $_POST[$k] = $v;
+            }
+        }
+        $_FILES = [];
+        if (isset($request->files)){
+            foreach ($request->files as $k => $v){
+                $_FILES[$k] = $v;
             }
         }
         //TODO：还有Cookie等等，操作类似同上
@@ -85,13 +94,6 @@ class HttpServer{
         ob_end_clean();
         //向客户端发送响应体
         $response->end($res);
-        /**
-         * 关闭swoole_http_server
-         * 由于swoole中会把“模块/控制器/方法”等作为全局变量
-         * 导致访问出现问题，所以每次需要关闭swoole_http_server
-         * 相应的访问方式为 http://192.168.248.132:8925/?s=index/index/test&num=1&name=hz
-         */
-        $this->http->close();
     }
 
     public function onTask($server, $task_id, $worker_id, $data){
@@ -175,7 +177,7 @@ new HttpServer();
 //     * 关闭swoole_http_server
 //     * 由于swoole中会把“模块/控制器/方法”等作为全局变量
 //     * 导致访问出现问题，所以每次需要关闭swoole_http_server
-//     * 相应的访问方式为 http://192.168.248.132:8925/?s=index/index/test
+//     * 相应的访问方式为 http://192.168.248.132:8925/?s=index/index/test&m=1&a=123
 //     */
 //    $http->close();
 //});

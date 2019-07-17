@@ -91,4 +91,6 @@ $http->on('request',function ($request,$response){
 $http->close();
 ```
 
+PS：已改为面向对象访问并对其优化，访问方式：http://192.168.248.132:8925/index/index/test?a=123&b=456
+
 完整代码见[http_server.php](./thinkphp/server/http_server.php)
