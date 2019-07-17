@@ -86,9 +86,9 @@ $http->on('request',function ($request,$response){
  * 关闭swoole_http_server
  * 由于swoole中会把“模块/控制器/方法”等作为全局变量
  * 导致访问出现问题，所以每次需要关闭swoole_http_server
- * 相应的访问方式为 http://192.168.248.132:8925/?s=index/index/test
+ * 相应的访问方式为 http://192.168.248.132:8925/?s=index/index/test&num=1&name=hz
  */
 $http->close();
 ```
 
-完整代码见http_server.php
+完整代码见[http_server.php](./thinkphp/server/http_server.php)
