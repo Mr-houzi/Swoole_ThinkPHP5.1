@@ -3,7 +3,7 @@
 > 此项目为手动适配Swoole和ThinkPHP，除此之外也可以使用 `think-swoole`扩展。
 > 文档链接：https://www.kancloud.cn/thinkphp/think-swoole/722895
 
-## 目录
+## 项目目录
 
 - thinkphp tp框架
     - server swoole_http_server相关业务
@@ -91,6 +91,65 @@ $http->on('request',function ($request,$response){
 $http->close();
 ```
 
-PS：已改为面向对象访问并对其优化，访问方式：http://192.168.248.132:8925/index/index/test?a=123&b=456
+**PS：** http_server.php已改为面向对象。完整代码见[http_server.php](./thinkphp/server/http_server.php)
 
-完整代码见[http_server.php](./thinkphp/server/http_server.php)
+修改`thinphp/library/Request.php`的pathinfo和path方法，修改如下，解决了路由问题，保证了每次都获取最新的路径而不是一开始的路径。
+
+*pathinfo*
+
+```
+public function pathinfo()
+    {
+//        if (is_null($this->pathinfo)) { //注释掉此行
+            if (isset($_GET[$this->config->get('var_pathinfo')])) {
+                // 判断URL里面是否有兼容模式参数
+                $_SERVER['PATH_INFO'] = $_GET[$this->config->get('var_pathinfo')];
+                unset($_GET[$this->config->get('var_pathinfo')]);
+            } elseif ($this->isCli()) {
+                // CLI模式下 index.php module/controller/action/params/...
+                $_SERVER['PATH_INFO'] = isset($_SERVER['argv'][1]) ? $_SERVER['argv'][1] : '';
+            }
+
+            // 分析PATHINFO信息
+            if (!isset($_SERVER['PATH_INFO'])) {
+                foreach ($this->config->get('pathinfo_fetch') as $type) {
+                    if (!empty($_SERVER[$type])) {
+                        $_SERVER['PATH_INFO'] = (0 === strpos($_SERVER[$type], $_SERVER['SCRIPT_NAME'])) ?
+                        substr($_SERVER[$type], strlen($_SERVER['SCRIPT_NAME'])) : $_SERVER[$type];
+                        break;
+                    }
+                }
+            }
+
+            $this->pathinfo = empty($_SERVER['PATH_INFO']) ? '/' : ltrim($_SERVER['PATH_INFO'], '/');
+//        } //注释掉此行
+
+        return $this->pathinfo;
+    }
+```
+
+*path*
+
+```
+public function path()
+    {
+//        if (is_null($this->path)) { //注释掉此行
+            $suffix   = $this->config->get('url_html_suffix');
+            $pathinfo = $this->pathinfo();
+            if (false === $suffix) {
+                // 禁止伪静态访问
+                $this->path = $pathinfo;
+            } elseif ($suffix) {
+                // 去除正常的URL后缀
+                $this->path = preg_replace('/\.(' . ltrim($suffix, '.') . ')$/i', '', $pathinfo);
+            } else {
+                // 允许任何后缀访问
+                $this->path = preg_replace('/\.' . $this->ext() . '$/i', '', $pathinfo);
+            }
+//        } //注释掉此行
+
+        return $this->path;
+    }
+```
+
+> 访问方式为 http://192.168.248.132:8925/?s=index/index/test&num=1&name=hz
